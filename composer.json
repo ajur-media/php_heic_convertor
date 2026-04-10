@@ -1,0 +1,22 @@
+{
+    "name": "ajur-media/php-heic-convertor",
+    "description": "HEIC Convertor, using imagemagick",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Wombat",
+            "email": "wombat@fontanka.ru"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "AJUR\\Toolkit\\": "src/"
+
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-imagick": "*"
+    }
+}
