@@ -2,7 +2,7 @@
 
 namespace AJUR\Toolkit;
 
-class HEIC_Convertor
+class HEIC_Convertor implements HEIC_ConvertorInterface
 {
     private int $quality = 90;
     private bool $preserveMetadata = true;
@@ -11,12 +11,24 @@ class HEIC_Convertor
     private $logger = null;
     private bool $autoRotate = true;
 
+    /**
+     * Создает инстанс конвертора
+     *
+     * @param array $options
+     */
     public function __construct(array $options = [])
     {
         $this->setOptions($options);
         $this->checkRequirements();
     }
 
+    /**
+     * Устанавливает опции конвертора
+     *
+     * @param array $options
+     *
+     * @return $this
+     */
     public function setOptions(array $options): self
     {
         if (isset($options['quality'])) {
@@ -46,13 +58,43 @@ class HEIC_Convertor
         return $this;
     }
 
+    /**
+     * Проверка доступности всех необходимых компонентов
+     *
+     * @return bool
+     */
+    public function isAvailable(): bool
+    {
+        try {
+            $this->checkRequirements();
+            return true;
+        } catch (\RuntimeException) {
+            return false;
+        }
+    }
+
     private function checkRequirements(): void
     {
         if (!extension_loaded('imagick')) {
             throw new \RuntimeException('Расширение Imagick не установлено');
         }
+
+        try {
+            $imagick = new \Imagick();
+            $version = $imagick->getVersion();
+            $imagick->destroy();
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Библиотека ImageMagick не установлена: ' . $e->getMessage());
+        }
     }
 
+    /**
+     * Устанавливает степень сжатия JPEG
+     *
+     * @param int $quality
+     *
+     * @return $this
+     */
     public function setQuality(int $quality): self
     {
         if ($quality < 1 || $quality > 100) {
@@ -63,18 +105,40 @@ class HEIC_Convertor
         return $this;
     }
 
+    /**
+     * Устанавливает максимальную ширину изображения
+     *
+     * @param int|null $width
+     *
+     * @return $this
+     */
     public function setMaxWidth(?int $width): self
     {
         $this->maxWidth = $width;
         return $this;
     }
 
+    /**
+     * Устанавливает максимальную высоту изображения
+     *
+     * @param int|null $height
+     *
+     * @return $this
+     */
     public function setMaxHeight(?int $height): self
     {
         $this->maxHeight = $height;
         return $this;
     }
 
+    /**
+     * Конвертирует файл
+     *
+     * @param string $inputPath
+     * @param string|null $outputPath
+     *
+     * @return string
+     */
     public function convert(string $inputPath, ?string $outputPath = null): string
     {
         $this->validateInputFile($inputPath);
@@ -120,6 +184,11 @@ class HEIC_Convertor
 
     /**
      * Стандартный метод конвертации
+     *
+     * @param string $inputPath
+     * @param string $outputPath
+     *
+     * @return string
      */
     private function convertWithStandardMethod(string $inputPath, string $outputPath): string
     {
@@ -174,6 +243,11 @@ class HEIC_Convertor
 
     /**
      * Метод конвертации без манипуляций с геометрией
+     *
+     * @param string $inputPath
+     * @param string $outputPath
+     *
+     * @return string
      */
     private function convertWithoutGeometry(string $inputPath, string $outputPath): string
     {
@@ -209,6 +283,10 @@ class HEIC_Convertor
 
     /**
      * Безопасное исправление геометрии (работает во всех версиях Imagick)
+     *
+     * @param \Imagick $imagick
+     *
+     * @return void
      */
     private function fixImageGeometrySafe(\Imagick $imagick): void
     {
@@ -373,7 +451,11 @@ class HEIC_Convertor
     }
 
     /**
-     * Диагностика
+     * Диагностика входного файла
+     *
+     * @param string $inputPath
+     *
+     * @return array
      */
     public function diagnose(string $inputPath): array
     {
@@ -382,6 +464,7 @@ class HEIC_Convertor
             'file_size' => file_exists($inputPath) ? filesize($inputPath) : 0,
             'php_version' => PHP_VERSION,
             'imagick_loaded' => extension_loaded('imagick'),
+            'imagick_available' => $this->isAvailable(),
         ];
 
         if (extension_loaded('imagick')) {
@@ -405,5 +488,6 @@ class HEIC_Convertor
 
         return $diagnosis;
     }
-
 }
+
+# -eof- #
